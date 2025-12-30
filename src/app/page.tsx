@@ -1,55 +1,82 @@
 "use client";
 
-import Ca from '@/Ca';
-import { TimelineDemo } from '@/components/As';
-import { BackgroundLinesDemo } from '@/components/Btry';
-import { WobbleCardDemo } from '@/components/Gri';
-import Ro from '@/components/Ro';
-import Sl from '@/components/Sl';
-import { SpotlightNewDemo } from '@/components/Spo';
-import { StickyScrollRevealDemo } from '@/components/St';
-import Offers from '@/components/Stac';
-import { HeroParallaxDemo } from '@/components/Tan';
-import HorizontalScroll from '@/Hrcard';
-// import Anan from '@/Anan'
-// import Pagess from '@/Posherror';
-// import Posherror from '@/Posherror';
-import React from 'react'
-// import Tabs, { tabData } from '../../src/Tabs'
-// import Featuredworks from '@/Caedss'
-// import { ScrollVelocityContainer } from '@/components/ui/scroll-based-velocity'
-// import { ScrollBasedVelocityImagesDemo } from '@/Anan'
+import { useState } from "react";
 
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+};
 
+export default function Page() {
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
 
-const page = () => {
-  
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    const userMessage: Message = { role: "user", content: input };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, userMessage],
+        }),
+      });
+
+      const data = await res.json();
+
+      const botMessage: Message = {
+        role: "assistant",
+        content: data.reply || "❌ No reply",
+      };
+
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "❌ Network error." },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="">
-      {/* <div className="max-w-6xl mx-auto mt-10">
-      <Tabs tabs={tabData} />
-    </div>
-      <Featuredworks />
-      <ScrollBasedVelocityImagesDemo/> */}
-      {/* <Posherror/> */}
-      {/* <Pagess/> */}
-      {/* <WobbleCardDemo/> */}
-      {/* <TimelineDemo/> */}
-      {/* <StickyScrollRevealDemo/> */}
-      {/* <Ca/> */}
-      {/* <HeroParallaxDemo/> */}
-      {/* <Anan/> */}
+    <div style={{ maxWidth: 600, margin: "40px auto" }}>
+      <h2>🤖 Chat Bot</h2>
 
-      {/* <Ro/> */}
-      {/* <HorizontalScroll/> */}
-      {/* <BackgroundLinesDemo/> */}
-      {/* <HorizontalScroll/> */}
-      {/* <Sl/> */}
-      {/* <SpotlightNewDemo/> */}
-      {/* <Offers/> */}
-      
+      <div
+        style={{
+          border: "1px solid #ccc",
+          padding: 10,
+          minHeight: 300,
+          marginBottom: 10,
+        }}
+      >
+        {messages.map((m, i) => (
+          <p key={i}>
+            <b>{m.role === "user" ? "You" : "Bot"}:</b> {m.content}
+          </p>
+        ))}
+        {loading && <p>Bot typing...</p>}
+      </div>
+
+      <input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Type message..."
+        style={{ width: "80%", padding: 8 }}
+      />
+      <button onClick={sendMessage} style={{ padding: 8 }}>
+        Send
+      </button>
     </div>
-  )
+  );
 }
-
-export default page
